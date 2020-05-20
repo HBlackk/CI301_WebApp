@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>{% block title %}My Website{% endblock %}</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Bootstrap. (2020), https://getbootstrap.com/. Date accessed: 02/01/20. -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+  <!--<script type="text/javascript" src="d3.js"></script>-->
+  <script src="http://d3js.org/d3.v5.min.js" charset="utf-8"></script>
+  <!-- Create CSS stylesheet -->
+  {% load static %}
+  <link rel="stylesheet" type="text/css" href="{% static '/myweb/style.css' %}">
+  <!-- Google font -->
+  <link href="https://fonts.googleapis.com/css?family=Lato&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <h1><u>Sentiment Visualisation Application</u></h1>
+
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-sm-2">
+      {% block sidebar %}
+          <ul class="sidebar-nav">
+            <li><a href="{% url 'home' %}">Home</a></li>
+            <li><a href="{% url 'collect' %}">Form</a></li>
+          </ul>
+      {% endblock %}
+      </div>
+    </div>
+  </div>
+
+  <div id="content", name="content">
+    {% block content %}
+    hello
+    {% endblock %}
+  </div>
+</body>
+</html>

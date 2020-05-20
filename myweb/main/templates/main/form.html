@@ -1,0 +1,20 @@
+{% extends 'main/base.html' %}
+
+{% load static %}
+<link rel="stylesheet" type="text/css" href="{% static '/myweb/style.css' %}">
+
+
+{% block title %} Enter A Business Name {% endblock %}
+
+{% block content %}
+<!--creates the form as HTML from Django, csrf token is for security -->
+<form method="post" action=".">
+{% csrf_token %}
+{# csrf token protects against cross site request forgeries, a type of attack #}
+  {{ input_form.name.label_tag }}
+  {{ input_form.name }}
+  {{ input_form.name.errors }}
+
+  <button type="submit" class="btn" value="send">Take A Look</button>
+</form>
+{% endblock %}

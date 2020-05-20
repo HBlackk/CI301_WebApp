@@ -1,0 +1,448 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+<!--<link rel="script" type="text/javascript" href="{% static '/myweb/d3.js' %}">-->
+<!-- UK GeoJSON reference
+Chorley, M. (2016) ‘UK-GeoJSON’. GitHub, September 2016,
+https://github.com/martinjc/UK-GeoJSON/tree/master/json. Date accessed: 18/02/20.
+-->
+{% block title %}
+View Visual
+{% endblock %}
+
+{% if data %}
+  <ul>
+    {% for tweet in data %}
+      <li> {{ tweet }} </li>
+    {% endfor %}
+    </ul>
+{% else %}
+{% endif %}
+
+<h1><u>Visuals</u></h1>
+{% block content %}
+
+<style>
+.button {
+  padding: 15px;
+
+}
+
+.axis path, .axis line {
+  stroke: #17252A;
+  stroke-width: 1.8px;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  fill: #17252A;
+  font-family: Myriad Pro;
+  padding: 1px;
+}
+
+.x.axis path {
+  stroke: #17252A;
+  stroke-width: 1.8px;
+}
+
+.line {
+  fill: none;
+  stroke: #f0a31f;
+  stroke-width: 3px;
+}
+
+.svg {
+  border: 1px #17252A;
+  float: left;
+}
+
+.arc text {
+  font: 12px Myriad Pro;
+  text-anchor: end;
+  padding: 20px;
+}
+
+.arc path {
+  stroke: #fff;
+}
+
+.overlay {
+  fill: none;
+  pointer-events: all;
+}
+
+.interact circle {
+  fill: none;
+  stroke: #17252A;
+}
+
+.interact text{
+  font-size: 9px;
+}
+
+.info_box {
+  fill: white;
+  stroke: #17252A;
+}
+
+.area :hover {
+  fill: steelblue;
+}
+
+</style>
+
+<h1>Visuals</h1>
+
+<!-- MomentJS. (2020), https://momentjs.com/. Date accessed: 27/03/20. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.19.1/moment.min.js"></script>
+<!--Bostock, M. (2019) D3js, https://d3js.org/. Date accessed: 20/02/20.  -->
+<script src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+<!-- Harvey, A. (2018) ‘TopoJSON’. GitHub, October 2018, https://github.com/topojson/topojson. Date accessed: 29/03/20.-->
+<script src="https://d3js.org/topojson.v2.min.js"></script>
+<script type="text/javascript"></script>
+<!--graph visualisation here-->
+  <script>
+  //An event listener is used to only load the visualisations once all other objects are loaded.
+  document.addEventListener('DOMContentLoaded', function(e) {
+  (function chart1(){
+    //Sets the padding around the JavaScript SVG.
+    var margin = {top: 20, right: 50, left: 50, bottom: 60},
+    //Defines the width and Height of the graph
+                width = 500,
+                height = 300;
+            //Parses the date from the database in %Y-%m-%d format.
+            var date = d3.timeParse("%Y-%m-%d");
+            var bisectDate = d3.bisector(function(d) { return d.date; }).left;
+            var formatDate = d3.timeFormat("%d/%m");
+            //sets the size of the graph relative to the defined width and height
+            var x = d3.scaleTime().range([0, width]);
+            var y = d3.scaleLinear().range([height, 0]);
+
+            //sets the x and y axis to the bottom and left of the screen respectively
+            var x_axis = d3.axisBottom(x);
+            var y_axis = d3.axisLeft(y);
+
+            //Defines the line variable as values returned as x and y.
+            //In this case the x axis is the days and y axis is the sentiment score.
+            var line = d3.line()
+                        .x(function(d) {return x(d.day); })
+                        .y(function(d) {return y(d.sentiment); });
+
+            //Defines the size and scale of the SVG graph.
+            var svg = d3.select("body").append("svg")
+            //The axis' are dynamic, meaning their values change based on the data
+            //retrieved from the database.
+                          .attr("width", width + margin.left + margin.right)
+                          .attr("height", height + margin.top + margin.bottom).append("g")
+                          .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+            //Collects the JSON data from the graph_visual url.
+            //This data is sent from the graph_visual method in views.py.
+            d3.json("{% url "graph_visual" %}", function(error, rows) {
+                //Iterates through each row.
+                rows.forEach(function (d) {
+                    d.day = date(d.day);
+                    d.sentiment = +d.sentiment;
+                });
+                //Returns the days from the database for use on the x axis.
+                x.domain(d3.extent(rows, function (d) {
+                    return d.day;
+                }));
+                //Returns the average sentiment from the database for use on the y axis.
+                y.domain(d3.extent(rows, function (d) {
+                    return d.sentiment;
+                }));
+
+                //This section appends the SVG graph by adjusting the x axis relative to the height, then
+                //placing each date value onto the graph.
+                //I have then added the text "Dates" to the axis so that user will know what is being shown.
+                svg.append("g")
+                  .attr("class", "x axis")
+                  .attr("transform", "translate(0," + height + ")")
+                  .call(x_axis)
+                  .append("text")
+                  .style("text-anchor", "end")
+                  .text("Dates");
+
+                //This section appends the SVG graph by adjusting the y axis and then
+                //placing each average sentiment value onto the graph.
+                //The text "Sentiment" has then been added to the axis at a -90 degree angle so that
+                //it is level with the y axis.
+                svg.append("g")
+                  .attr("class", "y axis")
+                  .call(y_axis)
+                  .append("text")
+                  .attr("transform", "rotate(-90)")
+                  .attr("y", 6)
+                  .attr("dy", ".60em")
+                  .style("text-anchor", "end")
+                  .text("Sentiment");
+
+                //Here we take in the rows data and draw a line between these points,
+                //creating the line graph.
+                svg.append("path")
+                  .datum(rows)
+                  .attr("class", "line")
+                  .attr("d", line);
+
+                //Next I have highlighted the actual points used on the line graph so that they are
+                //more visible. They are filled in black.
+                svg.selectAll("circles")
+                  .data(rows)
+                  .enter()
+                  .append("circle")
+                    .attr("fill", "black")
+                    .attr("cx", function(d) { return x(d.day) })
+                    .attr("cy", function(d) { return y(d.sentiment) })
+                    //radius of 3 pixels.
+                    .attr("r", 3)
+
+                var interact = svg.append("g")
+                  .attr("class", "focus")
+                  .style("display", "none");
+
+                //adds the data points on the graph with a radius of 5.
+                interact.append("circle")
+                  .attr("r", 5);
+
+                //provides the dimensions of the box when hovering over a point.
+                interact.append("rect")
+                  .attr("class", "info_box")
+                  .attr("width", 150)
+                  .attr("height", 80)
+                  .attr("x", 10)
+                  .attr("y", -20)
+                  .attr("rx", 4)
+                  .attr("ry", 4);
+
+                //Adds the date information in the box at coordinates [20, -2]
+                interact.append("text")
+                  .attr("class", "info_box_date")
+                  .attr("x", 20)
+                  .attr("y", -2);
+
+                //Adds the text "Sentiment: " in the box at coordinates [20, 20]
+                interact.append("text")
+                  .attr("x", 20)
+                  .attr("y", 20)
+                  .text("Sentiment: ");
+
+                //Adds the sentiment text to the information box.
+                interact.append("text")
+                  .attr("class", "info_box_sentiment")
+                  .attr("x", 40)
+                  .attr("y", 40);
+
+                svg.append("rect")
+                  .attr("class", "overlay")
+                  .attr("width", width)
+                  .attr("height", height)
+                  //When the mouse is hovering over a point.
+                  .on("mouseover", function()
+                  {
+                    interact.style("display", null);
+                  })
+                  .on("mouseout", function()
+                  {
+                    interact.style("display", "none");
+                  })
+                  //call the move function when the mouse moves.
+                  .on("mousemove", move);
+
+                function move()
+                {
+                  //this section of code was inspired from this source:
+                  //-->Alan Dunning (2018) https://bl.ocks.org/alandunning/cfb7dcd7951826b9eacd54f0647f48d3. Accessed 10th May 2020.
+
+                  //It points the mouse the closest point on the graph
+                  var hov = x.invert(d3.mouse(this)[0]);
+                  i = bisectDate(rows, hov, 1),
+                  d0 = rows[i-1],
+                  d1 = rows[i],
+                  d = hov - d0.day > d1.day - hov ? d1 : d0;
+                  //translate the x axis as the day and the y axis as the sentiment
+                  interact.attr("transform", "translate(" + x(d.day) + "," + y(d.sentiment) +")");
+                  //format the day so that minutes and seconds are not included (UTC time)
+                  interact.select(".info_box_date").text(formatDate(d.day));
+                  //display the sentiment to two decimal places
+                  interact.select(".info_box_sentiment").text((Math.round(d.sentiment * 100) / 100).toFixed(2));
+                }
+            });
+          }());
+
+            //PIE CHART
+        (function chart2(){
+            //set the dimensions for the svg container
+            var pie_margin = 25,
+                pie_width = 350,
+                pie_height = 350;
+
+            //formats the percentage to 2 decimal places where possible.
+            var percent_format = d3.format(".2f");
+
+            //defines the svg container to the width and height
+            var svg = d3.select("body")
+                .append("svg")
+                .attr("width", pie_width + pie_margin)
+                .attr("height", pie_height + pie_margin)
+                .attr("align", "right")
+                .append("g")
+                .attr("transform", "translate(" + pie_width/2 + "," + pie_height/2 + ")");
+
+            //The radius of the pie is the smallest value divided by 2.
+            var radius = Math.min(pie_width, pie_height)/2;
+
+            //defines a scale of colours that the chart will be filled with.
+            var pie_colour = d3.scaleOrdinal(["#ff9980", "#ffd633", "#aaff80", "#e60000", "#00b300"]);
+
+            //enters the values from our JSON into a newly defined pie chart.
+            var pie = d3.pie()
+                        .value(function (d) {
+                            return d.id;
+                        })
+                        .sort(null);
+
+            //The dimensions are influenced by an external project, as I wanted to achieve the appearance
+            //of a hollow pie chart.
+            //Reference -->
+            //John Alexis Guerra Gómez, (2018), https://bl.ocks.org/john-guerra/ca575486b081ab3b166e12cfba8169a1 , Accessed 2nd May 2020
+
+            //sets how thick the donut graph will be, here it will be 70-10 = 60.
+            var path = d3.arc()
+                        .outerRadius(radius - 10)
+                        .innerRadius(radius - 70);
+
+            //sets where the text will be placed relative to the radius.
+            var labels = d3.arc()
+                        .outerRadius(radius - 40)
+                        .innerRadius(radius - 40);
+
+            //pull the JSON data from the pie_visual page in the background.
+            d3.json("{% url "pie_visual" %}", function(error, rows) {
+                  if (error) throw error;
+
+                  rows.forEach(function(d) {
+                    d.id = +d.id;
+                    return d;
+                  });
+
+                  //adds up each of the values and saves it to a 'total' variable
+                  var total = d3.sum(rows, function(d) {
+                    return d.id;
+                  });
+
+                  //a percentage is calculated as the value divided by the total.
+                  rows.forEach(function(d) {
+                    d.percent = d.id / total;
+                  });
+
+                  //adds the rows data to the pie chart
+                  var arc = svg.selectAll(".arc")
+                      .data(pie(rows))
+                      .enter()
+                      .append("g")
+                      .attr("class", "arc");
+                      //fills the chart with colours based on the value that is presented.
+                      arc.append("path")
+                        .attr("d", path)
+                        .attr("fill", function (d) {
+                            return pie_colour(d.data.value);
+                      });
+                      //appends the text to the center of each section of the chart
+                      arc.append("text")
+                        .attr("transform", function (d) {
+                            return "translate (" + labels.centroid(d) + ")";
+                      })
+                      //adds the percentage value.
+                        .attr("dy", "2em")
+                        .text(function (d) {
+                            return percent_format(d.data.percent)*100 + "%";
+                      });
+                  });
+            }());
+
+      //MAP chart
+
+      (function chart3(){
+
+        //defines the size of the svg
+          var map_width = 400;
+          var map_height = 600;
+          var padding = 50;
+          var sentiment_by_region = {};
+
+          //sets the size of the svg to the width and height variables
+          var svg = d3.select("body").append("svg")
+              .attr("width", map_width + padding)
+              .attr("height", map_height + padding)
+              //draws the map to the centre of the svg
+              .attr("align", "center");
+
+
+          var england = d3.map();
+          //a colour scale defining shades of blue based on the value presented
+          var colour = d3.scaleOrdinal().domain([-0.75, -0.5, -0.25, 0, 0.25, 0.5, 0.75]).range(d3.schemeBlues[7]);
+
+          //retrieves the JSON from the map_visual url
+          d3.json("{% url "map_visual" %}", function(error, rows) {
+            if (error) {
+                console.log("error" + error);
+                throw error;
+            }
+            //Reference to json file that creates the England regions map.
+            //Chorley, M. (2016) ‘UK-GeoJSON’. GitHub, September 2016,
+            //https://github.com/martinjc/UK-GeoJSON/tree/master/json. Date accessed: 18/02/20.
+
+            var path_to_json = '{% static '/myweb/eng.json' %}';
+            var path_to_data = '{% url 'map_visual' %}';
+            d3.queue().defer(d3.json, path_to_json).defer(d3.json, path_to_data)
+            .await(fill_map);
+
+            function fill_map(error, eng, rows) {
+              if (error) {
+                  throw error;
+              }
+                var areas = topojson.feature(eng, eng.objects.eer);
+
+                //projects the map so that it is a good size and a clear angle reletive to the page.
+                var project = d3.geoIdentity()
+                  .reflectY(true)
+                  .fitExtent([[25,25],[400, 400]], areas);
+                var path = d3.geoPath().projection(project);
+
+                sentiment_by_region = rows.map_sentiment;
+
+                //Sets the region ID and sentiment to the map.
+                rows.forEach(function (d) {
+                    england.set(d.region_id, d.map_sentiment);
+                });
+
+                svg.append("g")
+                    .attr("class", "area")
+                    .selectAll("path")
+                    .data(areas.features)
+                    .enter().append("path")
+                    .attr("d", path)
+                    .attr("fill", function(d) {
+                        //fills the map with the sentiment for each region,
+                        //and sets it to two decimal places.
+                        d.map_sentiment = england.get(d.id);
+                        return colour((Math.round(d.map_sentiment * 100) / 100));
+                    })
+                    .append("title")
+                    .text(function(d) {
+                      //Adds the ID, Region and sentiment of each region to a text box for interactivity.
+                      d.map_sentiment = england.get(d.id);
+                      return d.id + ': ' + d.properties.EER13NM + " " + (Math.round(d.map_sentiment * 100) / 100);
+                    });
+            };
+          });
+        }());
+      });
+</script>
+<!-- Creates a link to return to the form page, this will be styled to have the appearance of a button.-->
+<footer>
+  <a href="{% url 'collect' %}" class="btn">Search Again.</a>
+</footer>
+
+{% endblock %}

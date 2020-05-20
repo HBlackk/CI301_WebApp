@@ -1,0 +1,75 @@
+h1
+{
+  background-color: #3AAFA9;
+  font-family: Myriad Pro;
+  text-align: center;
+  color: #17252A;
+  padding: 5px;
+}
+
+body
+{
+  background-color: #3AAFA9;
+  font-family: Myriad Pro;
+  text-align: center;
+  padding: 10px;
+}
+
+li a {
+  display: block;
+  width: 70px;
+  background-color: #3AAFA9;
+  font-family: Myriad Pro;
+  color: #17252A;
+  padding: 3px;
+}
+
+p
+{
+  padding: 20px;
+  color: #FEFFFF;
+}
+
+.container *
+{
+  padding: 50px;
+}
+
+form
+{
+  padding: 15px;
+  display: inline;
+}
+
+input {
+  border: 2px solid #17252A;
+  border-radius: 4px;
+}
+
+.axis path, .axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.line {
+  fill: none;
+  stroke: #f0a31f;
+  stroke-width: 2px;
+}
+
+.container {
+  float: left;
+}
+
+.btn {
+  background-color: #17252A;
+  font-family: Myriad Pro;
+  text-align: center;
+  color: #FEFFFF;
+  padding: 10px 25px
+}
